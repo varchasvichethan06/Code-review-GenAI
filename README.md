@@ -1,9 +1,9 @@
-#AI Code Reviewer
+## AI Code Reviewer
 
 A Streamlit-based web app that uses **Google Gemini** models to automatically review code written in **Python, Java, C++**, and **Go**. It provides detailed feedback, detects bugs, and suggests corrected code versions — all within an intuitive UI.
 
 ---
-##Features
+## Features
 - Supports **Python, Java, C++**, and **Go** code
 - Uses **Gemini 1.5 Flash** for fast AI-powered code review
 - 🪄 Provides structured feedback:
