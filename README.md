@@ -1,20 +1,20 @@
-# 🧠 AI Code Reviewer
+#AI Code Reviewer
 
 A Streamlit-based web app that uses **Google Gemini** models to automatically review code written in **Python, Java, C++**, and **Go**. It provides detailed feedback, detects bugs, and suggests corrected code versions — all within an intuitive UI.
 
 ---
-## 🚀 Features
-- 🧩 Supports **Python, Java, C++**, and **Go** code
-- 🤖 Uses **Gemini 1.5 Flash** for fast AI-powered code review
+##Features
+- Supports **Python, Java, C++**, and **Go** code
+- Uses **Gemini 1.5 Flash** for fast AI-powered code review
 - 🪄 Provides structured feedback:
   - Code Review
   - Bug Report
   - Fixed Code
-- 💾 Maintains review history within the session
-- 📥 Download AI review as Markdown
-- 🔐 Supports both `.env` and Streamlit Cloud `secrets.toml` for secure API key management
+- Maintains review history within the session
+- Download AI review as Markdown
+- Supports both `.env` and Streamlit Cloud `secrets.toml` for secure API key management
 ---
-## 🛠️ Installation
+## Installation
 ### 1. Clone this repository
 ```
 git clone https://github.com/yourusername/multi-lang-code-reviewer.git
@@ -38,7 +38,7 @@ python-dotenv>=1.0.1
 ```
 
 ---
-## 🔑 Setup API Key
+## Setup API Key
 ### Option 1: Using `.env` file (for local development)
 Create a `.env` file in your project root:
 ```
@@ -52,7 +52,7 @@ GOOGLE_API_KEY = "your_api_key_here"
 Get your key from **[Google AI Studio](https://aistudio.google.com/)**.
 
 ---
-## 🧾 Usage
+## Usage
 Run the Streamlit app:
 ```bash
 streamlit run app.py
@@ -66,7 +66,7 @@ Then open your browser to the local URL shown (usually `http://localhost:8501`).
 5. Download the review as a `.md` file if needed.
 
 ---
-## 🧩 Folder Structure
+## Folder Structure
 ```
 project/
 │
@@ -79,11 +79,11 @@ project/
 ```
 
 ---
-## 🧠 Model Used
+## Model Used
 - **Model:** `gemini-1.5-flash`
 - **Provider:** Google Generative AI API
 ---
-## 💡 Future Improvements
+## Future Improvements
 - Add syntax highlighting for fixed code
 - Enable multi-file uploads
 - Export reviews as PDF
