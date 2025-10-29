@@ -1,117 +1,162 @@
 import streamlit as st
 import google.generativeai as genai
+from datetime import datetime
 import os
+import re
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# --------------------------------------------------------
+# Load environment variables
+# --------------------------------------------------------
 load_dotenv()
 
-# Configure Gemini API key
-api_key = os.getenv("GOOGLE_API_KEY", st.secrets.get("GOOGLE_API_KEY", None))
-if not api_key:
-    st.error("Google API key not found. Please add it to .env or Streamlit secrets.")
+# --------------------------------------------------------
+# Configure API Key
+# --------------------------------------------------------
+api_key = os.getenv("GOOGLE_API_KEY") or "YOUR_API_KEY_HERE"
+
+if not api_key or api_key == "YOUR_API_KEY_HERE":
+    st.error("No API key found. Please set GOOGLE_API_KEY in your .env or Streamlit secrets.")
     st.stop()
 
 genai.configure(api_key=api_key)
 
-# Define supported languages
-LANGUAGES = ["Python", "Java", "C++", "Go"]
+# --------------------------------------------------------
+# System Instruction for AI Reviewer
+# --------------------------------------------------------
+SYSTEM_PROMPT = """
+You are a helpful AI Code Reviewer. 
+When students provide code, you will:
+1. Detect the programming language.
+2. Provide a detailed **Code Review**.
+3. Highlight issues or errors in a **Bug Report**.
+4. Provide a corrected version in **Fixed Code**.
 
-# System prompt for multi-language code review
-SYS_PROMPT = ("You are an expert AI Code Reviewer.\n"
-              "When a user submits code in Python, Java, C++, or Go, you will:\n"
-              "1. Analyze the logic, structure, and code style.\n"
-              "2. Identify potential bugs, errors, or improvements.\n"
-              "3. Suggest a corrected or optimized version of the code.\n\n"
-              "Format your response like this:\n"
-              "**Code Review:**\n[Detailed review here]\n\n"
-              "**Bug Report:**\n[List of detected bugs or issues]\n\n"
-              "**Fixed Code:**\n```<language>\n[Corrected code here]\n```")
+Follow this format exactly:
+- **Language Detected:** [language]
+- **Code Review:**
+  [Review here]
+- **Bug Report:**
+  [List issues here]
+- **Fixed Code:**
+  ```[language]
+  [Fixed version here]
+If no bugs, say 'No issues found' and still show a clean code version.
+"""
 
-# Initialize the model
-model = genai.GenerativeModel("models/gemini-1.5-flash", system_instruction=SYS_PROMPT)
+# --------------------------------------------------------
+# Configure Model
+# --------------------------------------------------------
+model = genai.GenerativeModel(
+    model_name="models/gemini-2.5-pro",
+    system_instruction=SYSTEM_PROMPT
+)
 
-# Streamlit UI
+# --------------------------------------------------------
+# Streamlit UI Setup
+# --------------------------------------------------------
+st.set_page_config(page_title="GenAI Code Reviewer",layout="wide") 
 st.title("AI Code Reviewer")
 
-# Sidebar for history
-if 'history' not in st.session_state:
-    st.session_state.history = []
+# Initialize session state
+if "history" not in st.session_state: 
+    st.session_state.history = [] 
+if "review" not in st.session_state: 
+    st.session_state.review = "" 
+if "code" not in st.session_state:
+    st.session_state.code = ""
+if "language" not in st.session_state:
+    st.session_state.language = ""
 
-with st.sidebar:
-    st.header("Review History")
-    if st.session_state.history:
-        for idx, item in enumerate(reversed(st.session_state.history)):
-            with st.expander(f"Review #{len(st.session_state.history) - idx}"):
-                st.code(item['code'][:120] + "...", language=item['lang'].lower())
-                if st.button(f"Load Review #{len(st.session_state.history) - idx}", key=f"load_{idx}"):
-                    st.session_state.current_code = item['code']
-                    st.session_state.current_review = item['review']
-                    st.session_state.current_lang = item['lang']
-                    st.rerun()
-    else:
+# --------------------------------------------------------
+# Sidebar (History)
+# --------------------------------------------------------
+with st.sidebar: 
+    st.header("Review History") 
+    if st.session_state.history: 
+        for idx, item in enumerate(reversed(st.session_state.history)): 
+            with st.expander(f"Review #{len(st.session_state.history) - idx} ({item['time']})"): 
+                st.code(item["code"][:120] + "...")
+            if st.button(f"Load #{len(st.session_state.history) - idx}", key=f"load_{idx}"): 
+                st.session_state.code = item["code"] 
+                st.session_state.review = item["review"]
+                st.session_state.language = item.get("language", "")
+                st.rerun() 
+    else: 
         st.info("No reviews yet.")
 
-    if st.button("Clear History"):
-        st.session_state.history = []
+    if st.button("Clear All"): 
+        st.session_state.clear() 
+        st.success("Session cleared!") 
         st.rerun()
 
-# Main layout
-col1, col2 = st.columns([1, 1])
+# --------------------------------------------------------
+# Tabs
+# --------------------------------------------------------
+tab_code, tab_review = st.tabs(["Your Code", " AI Review"])
 
-with col1:
-    st.subheader("Your Code")
-    language = st.selectbox("Select Language", LANGUAGES, index=0)
-    user_code = st.text_area(
-        "Enter your code here:",
+# --------------------------------------------------------
+# Code Input Tab
+# --------------------------------------------------------
+with tab_code: 
+    code_input = st.text_area(
+        "Enter your code:",
+        value=st.session_state.code,
         height=400,
-        value=st.session_state.get('current_code', ''),
-        placeholder="# Paste your code here"
+        placeholder="// Paste your code here (any language)..."
     )
 
-with col2:
-    st.subheader("AI Code Review")
-    review_container = st.container()
+    if st.button(" Generate Review"): 
+        if not code_input.strip(): 
+            st.warning("Please enter code first.") 
+        else: 
+            with st.spinner("Analyzing your code..."): 
+                try:
+                    # Send user code to Gemini
+                    response = model.generate_content([
+                        {"role": "user", "parts": [code_input]}
+                    ])
 
-# Generate review button
-if st.button("Generate Review", type="primary"):
-    if user_code.strip():
-        try:
-            with st.spinner("Analyzing your code..."):
-                response = model.generate_content(f"Language: {language}\n\nCode:\n{user_code}")
-                review = response.text
+                    review_text = response.text.strip() if response.text else " No review generated. Please check the API response."
 
-                st.session_state.history.append({
-                    'lang': language,
-                    'code': user_code,
-                    'review': review
-                })
-                st.session_state.current_review = review
+                    # Detect language from review text
+                    lang_match = re.search(r"(?i)\**\s*(language\s*detected|detected\s*language)\s*[:\-]\s*\**\s*([A-Za-z0-9+#\-\s]+)", review_text)
+                    detected_lang = lang_match.group(2).strip() if lang_match else "Unknown"
 
-            with review_container:
-                st.markdown(review)
+                    # If no "Fixed Code" section, show a friendly message
+                    if "Fixed Code" not in review_text:
+                        review_text += "\n\n It's all good! Your code looks perfect."
 
-                st.download_button(
-                    label="Download Review",
-                    data=f"# Code Review\n\n## Language: {language}\n\n## Original Code:\n```{language.lower()}\n{user_code}\n```\n\n## Review:\n{review}",
-                    file_name="code_review.md",
-                    mime="text/markdown"
-                )
+                    # Save session data
+                    st.session_state.code = code_input 
+                    st.session_state.review = review_text 
+                    st.session_state.language = detected_lang
+                    st.session_state.history.append({
+                        "code": code_input,
+                        "review": review_text,
+                        "language": detected_lang,
+                        "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+                    }) 
 
-            st.success("Review complete.")
+                    st.success(f" Review generated successfully! (Language: {detected_lang})") 
 
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
-            st.info("Please verify your API key or internet connection.")
-    else:
-        st.warning("Please enter code before generating a review.")
+                except Exception as e:
+                    st.error(f"Error: {e}") 
+                    st.info("Check if the API key is valid and Gemini access is enabled.")
 
-elif 'current_review' in st.session_state:
-    with review_container:
-        st.markdown(st.session_state.current_review)
+# --------------------------------------------------------
+# Review Tab
+# --------------------------------------------------------
+with tab_review: 
+    if st.session_state.review:
+        if st.session_state.language:
+            st.subheader(f" Language Detected: {st.session_state.language}")
+        st.markdown(st.session_state.review) 
         st.download_button(
-            label="Download Review",
-            data=f"# Code Review\n\n## Original Code:\n```{language.lower()}\n{user_code}\n```\n\n## Review:\n{st.session_state.current_review}",
+            "Download Review",
+            data=f"## Code Review\n\n{st.session_state.code}\n\n{st.session_state.review}",
             file_name="code_review.md",
             mime="text/markdown"
         )
+    else:
+        st.info("No review yet. Generate one in the first tab.")
