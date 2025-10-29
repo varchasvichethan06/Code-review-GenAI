@@ -6,23 +6,24 @@ import re
 from dotenv import load_dotenv
 
 # --------------------------------------------------------
-# Load environment variables
+# 🔧 Load environment variables
 # --------------------------------------------------------
 load_dotenv()
 
 # --------------------------------------------------------
-# Configure API Key
+# 🔑 Configure API Key
 # --------------------------------------------------------
-api_key = os.getenv("GOOGLE_API_KEY") or "YOUR_API_KEY_HERE"
+#api_key = os.getenv("GOOGLE_API_KEY") or "YOUR_API_KEY_HERE"
+api_key = "AIzaSyAoJnWj9earmDpIvo6J1Lm0UZxW9BBF5Y4"
 
 if not api_key or api_key == "YOUR_API_KEY_HERE":
-    st.error("No API key found. Please set GOOGLE_API_KEY in your .env or Streamlit secrets.")
+    st.error("❌ No API key found. Please set GOOGLE_API_KEY in your .env or Streamlit secrets.")
     st.stop()
 
 genai.configure(api_key=api_key)
 
 # --------------------------------------------------------
-# System Instruction for AI Reviewer
+# 🧠 System Instruction for AI Reviewer
 # --------------------------------------------------------
 SYSTEM_PROMPT = """
 You are a helpful AI Code Reviewer. 
@@ -45,7 +46,7 @@ If no bugs, say 'No issues found' and still show a clean code version.
 """
 
 # --------------------------------------------------------
-# Configure Model
+# ⚙️ Configure Model
 # --------------------------------------------------------
 model = genai.GenerativeModel(
     model_name="models/gemini-2.5-pro",
@@ -53,10 +54,10 @@ model = genai.GenerativeModel(
 )
 
 # --------------------------------------------------------
-# Streamlit UI Setup
+# 🖥️ Streamlit UI Setup
 # --------------------------------------------------------
-st.set_page_config(page_title="GenAI Code Reviewer",layout="wide") 
-st.title("AI Code Reviewer")
+st.set_page_config(page_title="GenAI Code Reviewer", page_icon="🤖", layout="wide") 
+st.title("🤖 AI Code Reviewer")
 
 # Initialize session state
 if "history" not in st.session_state: 
@@ -69,10 +70,10 @@ if "language" not in st.session_state:
     st.session_state.language = ""
 
 # --------------------------------------------------------
-# Sidebar (History)
+# 🧭 Sidebar (History)
 # --------------------------------------------------------
 with st.sidebar: 
-    st.header("Review History") 
+    st.header("📜 Review History") 
     if st.session_state.history: 
         for idx, item in enumerate(reversed(st.session_state.history)): 
             with st.expander(f"Review #{len(st.session_state.history) - idx} ({item['time']})"): 
@@ -85,18 +86,18 @@ with st.sidebar:
     else: 
         st.info("No reviews yet.")
 
-    if st.button("Clear All"): 
+    if st.button("🗑️ Clear All"): 
         st.session_state.clear() 
         st.success("Session cleared!") 
         st.rerun()
 
 # --------------------------------------------------------
-# Tabs
+# 🧩 Tabs
 # --------------------------------------------------------
-tab_code, tab_review = st.tabs(["Your Code", " AI Review"])
+tab_code, tab_review = st.tabs(["💻 Your Code", "✨ AI Review"])
 
 # --------------------------------------------------------
-# Code Input Tab
+# 💻 Code Input Tab
 # --------------------------------------------------------
 with tab_code: 
     code_input = st.text_area(
@@ -106,7 +107,7 @@ with tab_code:
         placeholder="// Paste your code here (any language)..."
     )
 
-    if st.button(" Generate Review"): 
+    if st.button("🔍 Generate Review"): 
         if not code_input.strip(): 
             st.warning("Please enter code first.") 
         else: 
@@ -117,7 +118,7 @@ with tab_code:
                         {"role": "user", "parts": [code_input]}
                     ])
 
-                    review_text = response.text.strip() if response.text else " No review generated. Please check the API response."
+                    review_text = response.text.strip() if response.text else "⚠️ No review generated. Please check the API response."
 
                     # Detect language from review text
                     lang_match = re.search(r"(?i)\**\s*(language\s*detected|detected\s*language)\s*[:\-]\s*\**\s*([A-Za-z0-9+#\-\s]+)", review_text)
@@ -125,7 +126,7 @@ with tab_code:
 
                     # If no "Fixed Code" section, show a friendly message
                     if "Fixed Code" not in review_text:
-                        review_text += "\n\n It's all good! Your code looks perfect."
+                        review_text += "\n\n✅ It's all good! Your code looks perfect."
 
                     # Save session data
                     st.session_state.code = code_input 
@@ -138,25 +139,26 @@ with tab_code:
                         "time": datetime.now().strftime("%Y-%m-%d %H:%M")
                     }) 
 
-                    st.success(f" Review generated successfully! (Language: {detected_lang})") 
+                    st.success(f"✅ Review generated successfully! (Language: {detected_lang})") 
 
                 except Exception as e:
                     st.error(f"Error: {e}") 
                     st.info("Check if the API key is valid and Gemini access is enabled.")
 
 # --------------------------------------------------------
-# Review Tab
+# ✨ Review Tab
 # --------------------------------------------------------
 with tab_review: 
     if st.session_state.review:
         if st.session_state.language:
-            st.subheader(f" Language Detected: {st.session_state.language}")
+            st.subheader(f"🌐 Language Detected: {st.session_state.language}")
         st.markdown(st.session_state.review) 
         st.download_button(
-            "Download Review",
+            "📥 Download Review",
             data=f"## Code Review\n\n{st.session_state.code}\n\n{st.session_state.review}",
             file_name="code_review.md",
             mime="text/markdown"
         )
     else:
         st.info("No review yet. Generate one in the first tab.")
+
