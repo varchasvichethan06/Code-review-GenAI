@@ -13,8 +13,8 @@ load_dotenv()
 # --------------------------------------------------------
 # 🔑 Configure API Key
 # --------------------------------------------------------
-#api_key = os.getenv("GOOGLE_API_KEY") or "YOUR_API_KEY_HERE"
-api_key = "AIzaSyAoJnWj9earmDpIvo6J1Lm0UZxW9BBF5Y4"
+api_key = os.getenv("GOOGLE_API_KEY") or "YOUR_API_KEY_HERE"
+
 
 if not api_key or api_key == "YOUR_API_KEY_HERE":
     st.error("❌ No API key found. Please set GOOGLE_API_KEY in your .env or Streamlit secrets.")
