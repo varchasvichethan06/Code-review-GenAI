@@ -32,7 +32,7 @@ SYS_PROMPT = ("You are an expert AI Code Reviewer.\n"
 model = genai.GenerativeModel("models/gemini-1.5-flash", system_instruction=SYS_PROMPT)
 
 # Streamlit UI
-st.title("AI Multi-Language Code Reviewer")
+st.title("AI Code Reviewer")
 
 # Sidebar for history
 if 'history' not in st.session_state:
@@ -70,7 +70,7 @@ with col1:
     )
 
 with col2:
-    st.subheader("AI Review")
+    st.subheader("AI Code Review")
     review_container = st.container()
 
 # Generate review button
